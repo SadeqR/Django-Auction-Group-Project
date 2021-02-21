@@ -1,0 +1,227 @@
+{% extends "auctions/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <article class="media content-section">
+
+        <!-- Script for calculating the time  of an auction ending -->
+        <script>
+                function makeTimer() {
+                    var endTime=new Date({{ object.date_expired|date:"U" }} * 1000);
+                    endTime = (Date.parse(endTime) / 1000);
+                
+                        var now = new Date();
+                        now = (Date.parse(now) / 1000);
+                
+                        var timeLeft = endTime - now;
+                
+                        var days = Math.floor(timeLeft / 86400);
+                        var hours = Math.floor((timeLeft - (days * 86400)) / 3600);
+                        var minutes = Math.floor((timeLeft - (days * 86400) - (hours * 3600 )) / 60);
+                        var seconds = Math.floor((timeLeft - (days * 86400) - (hours * 3600) - (minutes * 60)));
+                
+                        if (hours < "10") { hours = "0" + hours; }
+                        if (minutes < "10") { minutes = "0" + minutes; }
+                        if (seconds < "10") { seconds = "0" + seconds; }
+                
+                        $("#days").html(days + "<span>D, </span>");
+                        $("#hours").html(hours + "<span>H, </span>");
+                        $("#minutes").html(minutes + "<span>M, </span>");
+                        $("#seconds").html(seconds + "<span>S</span>");
+                
+                }
+                setInterval(function() { 
+                    
+
+                    var endTime=new Date({{ object.date_expired|date:"U" }} * 1000);
+                    endTime = (Date.parse(endTime) / 1000);
+                
+                    var now = new Date();
+                    now = (Date.parse(now) / 1000);
+            
+                    var closed = "{{ object.closed }}" ;
+                    if(now >= endTime && closed === "False"){
+                        // If the time has ran out, then refresh the page which will cause auction to close!
+                        location.reload();
+                    }else{
+                        makeTimer(); 
+                    }
+                }, 
+                1000);
+        </script>
+
+
+        <!-- The actual HTML of auction detail -->
+
+        
+        <img class="rounded-circle article-img" src="{{object.owner.profile.image.url}}">
+
+        <div class="media-body">
+
+            <!-- Metadata, show owner and date posted, if we are the owner show the update and delete buttons -->
+            <div class="article-metadata">
+                <a class="mr-2" href="{% url 'account-auctions' object.owner.username %}">{{ object.owner }}</a>
+                <small class="text-muted">Date posted: {{ object.date_created | date:"d F, Y"}}</small>
+                <!-- add buttons if we are the owner of the auction -->
+                {% if object.owner == user %}
+                    <div>
+                        <a class="btn btn-primary btn-sm mt-1 mb-1" href="{% url 'auction-update' object.id %}">Update</a>
+                        <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'auction-delete' object.id %}">Delete</a>
+                    </div>
+                {% endif %}
+            </div>
+
+
+            <!-- if the auction is closed show this message -->
+            {% if object.closed %}
+                </br>
+                <h1 class="text-center text-danger">- - - - - AUCTION CLOSED - - - - -</h1>
+                {% if object.winnerBid %}
+
+                    {% if user != object.winnerBid.user %}
+                        <p>Winner of auction was: {{object.winnerBid.user.username}}</p>
+                        <p>They won it at the price of: <b>£{{object.winnerBid.price}}</b></p>
+                    {% else %}
+                        <p>Congratulations! You won this auction for <b>£{{object.winnerBid.price}}</b> </p>
+                        <p>This auction has been saved under your <a href="{% url 'profile' %}">profile</a> for reference. </p>
+                    {% endif %}
+                {% else %}
+                    <p>Nobody won the auction!</p>
+                {% endif %}
+                </br>
+                </br>
+                </br>
+                </br>
+                <hr>
+            {% endif %}
+
+            <!-- extra info such as when the auction closes and the count down timer -->
+            <h2 class="article-title">{{ object.title }}</h2>
+            <p clas="article-content">{{object.condition}}</p>
+            <div class="container">
+                <div class="row">
+                        <div class="col-sm">
+                                <img class="auc_img" src="{{object.image.url}}">
+                        </div>
+                        <div class="col-sm-6 col-md-5 ">
+                            {% if object.closed %}
+                                <p class="article-time">Auction ended on: </p>
+                                <p>{{object.date_expired}} </p>
+
+                            {% else %}
+                                <p class="article-time">Auction ends on: </p>
+                                <p>{{object.date_expired}} </p>
+
+                                <div class="right-match-time">
+                                        <h5>Time left:</h2>
+                                        <p id="countdown-1" class="countdown">
+                                            <span id="days"></span><span id="hours"></span><span id="minutes"></span><span id="seconds"></span>
+                                        </p>
+                                </div>
+                            {% endif %}
+                    </div>
+                </div>
+            </div>
+            </br>
+
+            <!-- if we have bids on this auction show the price and a url to the history of the bids-->
+            {% if bid_list %}
+                <p class="article-content"><b>£{{bid_list.last.price}}</b> <a href="{% url 'auction-bid' object.id %}">{{bid_list|length}} bids</a></p>    
+                {% if user.is_authenticated %}
+                    {% if user != object.owner %}
+                        {% if object.closed == False %}
+                        <div>
+                            <form method="POST">
+                                {% csrf_token %}
+                                {{ form | crispy}}
+                                <br>
+                                <input type="submit" value="Bid">
+                            </form> 
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% else %}
+            <!-- otherwise show what it looks like with no bids -->
+                <p class="article-content"><b>£{{object.price}}</b> 0 bids</p>
+                {% if user.is_authenticated %}
+                    {% if user != object.owner %}
+                        {% if object.closed == False %}
+                        <div>
+                            <form method="POST">
+                                {% csrf_token %}
+                                {{ form | crispy }}
+                                <br>
+                                <input type="submit" value="Bid">
+                            </form> 
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+
+            <!-- show description of auction -->
+            <p class="article-description">Description: {{ object.description }}</p>
+        </div>
+    </article>
+
+
+
+
+
+    
+    <!-- the chat section of the auction is here -->
+    <article class="media content-section">
+        <div>
+            <h1>Messages on this item</h1>
+
+            <div class="container darker">
+                <table class="table table-striped">
+                    <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Time</th>
+                                <th>Message</th>
+                            </tr>
+                    </thead>
+                    <tbody>
+                    {% for comment in comments %}
+                        <!-- If the owner commented, make the row red.. -->
+                        {% if comment.user == object.owner %}
+                            <tr>
+                                <td> {{ comment.user.username }} </td>
+                                <td> {{ comment.date_created }} </td>
+                                <td > <font color="#CD5C5C">{{ comment.message }} </font></td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td> {{ comment.user.username }} </td>
+                                <td> {{ comment.date_created }} </td>
+                                <td> {{ comment.message }} </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+    
+            {% if user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="comment">Message:</label>
+                    <textarea class="form-control" rows="2" id="comment" name="comment"></textarea>
+                </div>
+                <button id="post_button" type="submit" class="btn btn-outline-primary">Post Comment</button>
+            </form>
+            {% endif %}
+        </div>
+
+    </article>
+{% endblock content %}

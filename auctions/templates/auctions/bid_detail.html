@@ -1,0 +1,19 @@
+{% extends "auctions/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h1>Bidding history</h1>
+    {% for bid in bid_list %}
+    <article class="media content-section">
+        <p>Bid: {{ forloop.counter }}</p>
+        <img class="rounded-circle article-img" src="{{bid.user.profile.image.url}}">
+        <div class="media-body">
+            <div class="article-metadata">
+                <small class="text-muted">{{ bid.date_created}}</small>
+            </div>
+            <p class="article-content">Username: {{bid.user.username}}</p>
+            <p class="article-content">Bid amount: £{{ bid.price }}</p>
+        </div>
+    </article>
+    {% endfor %}
+{% endblock content %}

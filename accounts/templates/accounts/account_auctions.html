@@ -1,0 +1,24 @@
+
+{% extends "auctions/base.html" %}
+
+{% block content %}
+    <h1 class="mb-3">Auctions by {{ view.kwargs.username }} ({{ page_obj.paginator.count }})</h1>
+
+    {% for item in items %}
+        <article class="media content-section">
+                <img class="rounded-circle article-img" src="{{item.owner.profile.image.url}}">
+                <div class="media-body">
+                <div class="article-metadata">
+                    <a class="mr-2" href="{% url 'account-auctions' item.owner.username %}">{{ item.owner }}</a>
+                    <small class="text-muted">{{ item.date_created | date:"d F, Y"}}</small>
+                </div>
+                <h2><a class="article-title" href="{% url 'auction-detail' item.id %}">{{ item.title }}</a></h2>
+                <p class="article-content">{{ item.description }}</p>
+                </div>
+        </article>
+    {% endfor %}
+
+    {% include 'accounts/pagination_footer.html' %}
+
+{% endblock content %}
+

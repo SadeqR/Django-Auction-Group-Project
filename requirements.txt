@@ -1,0 +1,7 @@
+django==2.1
+django-debug-toolbar==1.8
+gunicorn==19.4.5
+psycopg2-binary
+whitenoise==3.3.1
+django-crispy-forms
+Image
